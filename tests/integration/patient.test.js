@@ -1,10 +1,20 @@
 const request = require('supertest');
 const app = require('../../server');
+let server;
 
 describe('Patient API Endpoints', () => {
+  beforeEach(async () => {
+    app.clearDB();
+    server = app.listen(4001);
+  });
+
+  afterEach(async () => {
+    await new Promise((resolve) => server.close(resolve));
+  });
+
   describe('GET /api/patients', () => {
     it('should return empty list initially', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get('/api/patients')
         .expect(200);
 
@@ -23,7 +33,7 @@ describe('Patient API Endpoints', () => {
         birthDate: '1990-01-01'
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post('/api/patients')
         .send(newPatient)
         .expect(201);
@@ -39,7 +49,7 @@ describe('Patient API Endpoints', () => {
         name: 'John Doe'
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post('/api/patients')
         .send(invalidPatient)
         .expect(400);
@@ -59,7 +69,7 @@ describe('Patient API Endpoints', () => {
         phone: '3009876543'
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post('/api/patients')
         .send(newPatient);
 
@@ -67,7 +77,7 @@ describe('Patient API Endpoints', () => {
     });
 
     it('should return patient by ID', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get(`/api/patients/${patientId}`)
         .expect(200);
 
@@ -76,7 +86,7 @@ describe('Patient API Endpoints', () => {
     });
 
     it('should return 404 for non-existent patient', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get('/api/patients/PAT999999999')
         .expect(404);
 

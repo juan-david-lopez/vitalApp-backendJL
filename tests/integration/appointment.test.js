@@ -1,26 +1,35 @@
 const request = require('supertest');
 const app = require('../../server');
+let server;
 
 describe('Appointment API Endpoints', () => {
   let patientId;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    app.clearDB();
+    server = app.listen(4002);
+    
+    // Crear un paciente para las pruebas
     const newPatient = {
       name: 'Test Patient',
       email: 'test@example.com',
       phone: '3001234567'
     };
 
-    const res = await request(app)
+    const res = await request(server)
       .post('/api/patients')
       .send(newPatient);
 
     patientId = res.body.data.id;
   });
 
+  afterEach(async () => {
+    await new Promise((resolve) => server.close(resolve));
+  });
+
   describe('GET /api/appointments', () => {
     it('should return empty list initially', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get('/api/appointments')
         .expect(200);
 
@@ -30,7 +39,7 @@ describe('Appointment API Endpoints', () => {
     });
 
     it('should filter appointments by patientId', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get(`/api/appointments?patientId=${patientId}`)
         .expect(200);
 
@@ -49,7 +58,7 @@ describe('Appointment API Endpoints', () => {
         reason: 'Check up'
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post('/api/appointments')
         .send(newAppointment)
         .expect(201);
@@ -65,7 +74,7 @@ describe('Appointment API Endpoints', () => {
         patientId
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post('/api/appointments')
         .send(invalidAppointment)
         .expect(400);
@@ -86,7 +95,7 @@ describe('Appointment API Endpoints', () => {
         time: '10:00'
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post('/api/appointments')
         .send(newAppointment);
 
@@ -94,7 +103,7 @@ describe('Appointment API Endpoints', () => {
     });
 
     it('should update appointment status', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .patch(`/api/appointments/${appointmentId}`)
         .send({ status: 'completed' })
         .expect(200);
@@ -104,7 +113,7 @@ describe('Appointment API Endpoints', () => {
     });
 
     it('should return 404 for non-existent appointment', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .patch('/api/appointments/APT999999999')
         .send({ status: 'completed' })
         .expect(404);
@@ -125,7 +134,7 @@ describe('Appointment API Endpoints', () => {
         time: '10:00'
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post('/api/appointments')
         .send(newAppointment);
 
@@ -133,7 +142,7 @@ describe('Appointment API Endpoints', () => {
     });
 
     it('should delete an appointment', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .delete(`/api/appointments/${appointmentId}`)
         .expect(200);
 
@@ -142,7 +151,7 @@ describe('Appointment API Endpoints', () => {
     });
 
     it('should return 404 for non-existent appointment', async () => {
-      const res = await request(app)
+      const res = await request(server)
         .delete('/api/appointments/APT999999999')
         .expect(404);
 
